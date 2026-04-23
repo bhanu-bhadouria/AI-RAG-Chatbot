@@ -1,9 +1,12 @@
+import os
 from openai import OpenAI
+from retriever import build_store_from_file, retrieve
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-client = OpenAI()
+store = build_store_from_file("sample.txt")
 
 messages = [
-    {"role": "system", "content": "You are a helpful AI assistant."}
+    {"role": "system", "content": "You are a helpful AI assistant. Use provided context to answer."}
 ]
 
 while True:
@@ -12,7 +15,17 @@ while True:
     if user_input.lower() == "exit":
         break
 
-    messages.append({"role": "user", "content": user_input})
+    context = retrieve(user_input, store)
+
+    prompt = f"""
+    Context:
+    {context}
+
+    Question:
+    {user_input}
+    """
+
+    messages.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
